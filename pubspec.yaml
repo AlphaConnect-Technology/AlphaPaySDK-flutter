@@ -1,0 +1,20 @@
+name: alphapay_checkout
+description: >
+  Official Dart client SDK for AlphaPay hosted checkout sessions -- no
+  secret key, safe to embed in a mobile/web app. Create the checkout
+  session server-side with the Node/PHP/Python SDK, then drive payment
+  from the app with this package. Pure Dart (no Flutter dependency): works
+  in Flutter apps (iOS/Android/web/desktop) and plain Dart CLI/server code.
+version: 0.1.0
+homepage: https://alphapay.me
+repository: https://github.com/AlphaConnect-Technology/AlphaPaySDK-flutter
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  http: ^1.2.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^4.0.0
