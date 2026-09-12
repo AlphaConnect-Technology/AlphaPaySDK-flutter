@@ -11,6 +11,13 @@ nom) s'est révélée correcte à la compilation.
 
 ## Bloquant
 
+- [ ] **`dart analyze`/`dart test` sur l'ajout du 2026-09-12** (voir "Fait"
+      ci-dessous) -- aucun toolchain Dart/Flutter disponible dans cet
+      environnement au moment de l'écrire (contrairement à la vérification
+      initiale ci-dessous, qui avait pu tourner). Relecture manuelle
+      uniquement (équilibrage accolades/parenthèses vérifié par script,
+      modèles/méthodes calqués sur les mêmes existants déjà testés dans ce
+      fichier) -- à faire tourner avant publication.
 - [ ] **Tester contre une vraie session de checkout** (créée avec le SDK
       Node/PHP/Python) sur `api.alphapay.me` -- aucun des 4 SDK n'a
       d'endpoint de checkout PUBLIC testé en conditions réelles pour
@@ -59,3 +66,10 @@ nom) s'est révélée correcte à la compilation.
       d'erreur propres à ce flux, le retry 429, et `pollStatus` -- **exécutés
       avec succès, 2 fois d'affilée.**
 - [x] `dart analyze` : aucun problème détecté.
+- [x] 2026-09-12 — synchronisé avec le SDK PHP (commit "Add public payment
+      link features") : `getPaymentLink()`/`createCheckoutFromPaymentLink()`
+      (page publique d'un lien de paiement -> CheckoutSession one-shot,
+      `PublicPaymentLink`/`PublicCheckoutResult`/`PaymentLinkCustomField`
+      dans `models.dart`), et corrigé le même exemple de code réseau erroné
+      que le SDK PHP (`'MTN_BJ'` -> `'mtn_bj'`, README + docblock
+      `NetworkOption.code`). 2 tests ajoutés (non exécutés, cf. Bloquant).

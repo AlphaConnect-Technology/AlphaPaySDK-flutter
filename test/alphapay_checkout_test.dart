@@ -139,4 +139,60 @@ void main() {
     expect(results.map((r) => r.status).toList(), ['PENDING', 'PENDING', 'PAID']);
     expect(results.last.isTerminal, isTrue);
   });
+
+  test('getPaymentLink parses public options and custom fields', () async {
+    final client = MockClient((request) async {
+      return _json({
+        'success': true,
+        'code': 200,
+        'data': {
+          'name': 'Facture #42',
+          'merchant_name': 'Boutique Test',
+          'amount_type': 'FIXED',
+          'amount': '5000.00',
+          'currency': 'XOF',
+          'slug': 'demo-slug',
+          'is_usable': true,
+          'require_phone': false,
+          'google_ads_id': 'AW-123456789',
+          'custom_fields': [
+            {'key': 'reference_client', 'label': 'Référence client', 'required': true},
+          ],
+        },
+      });
+    });
+    final checkout = AlphaPayCheckout(baseUrl: baseUrl, httpClient: client);
+
+    final link = await checkout.getPaymentLink('demo-slug');
+
+    expect(link.googleAdsId, 'AW-123456789');
+    expect(link.customFields, hasLength(1));
+    expect(link.customFields.first.key, 'reference_client');
+    expect(link.customFields.first.required, isTrue);
+  });
+
+  test('createCheckoutFromPaymentLink sends customer/custom fields and no auth header', () async {
+    late http.Request captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return _json({
+        'success': true,
+        'code': 201,
+        'data': {'slug': 'checkout-slug', 'checkout_url': 'https://checkout.example.test/checkout-slug'},
+      });
+    });
+    final checkout = AlphaPayCheckout(baseUrl: baseUrl, httpClient: client);
+
+    final result = await checkout.createCheckoutFromPaymentLink(
+      'demo-slug',
+      customer: const CheckoutCustomer(email: 'client@example.com', firstName: 'Client', lastName: 'Test'),
+      customFieldValues: {'reference_client': 'CMD-42'},
+    );
+
+    expect(result.slug, 'checkout-slug');
+    expect(captured.headers.containsKey('Authorization'), isFalse);
+    final sentBody = jsonDecode(captured.body) as Map<String, dynamic>;
+    expect((sentBody['customer'] as Map)['email'], 'client@example.com');
+    expect((sentBody['custom_field_values'] as Map)['reference_client'], 'CMD-42');
+  });
 }

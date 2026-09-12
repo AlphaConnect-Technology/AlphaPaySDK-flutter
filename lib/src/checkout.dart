@@ -114,6 +114,38 @@ class AlphaPayCheckout {
     }
   }
 
+  /// Consultation publique d'un lien de paiement (montant, champs
+  /// personnalisés à collecter, etc.) -- `slug` fait office de capacité,
+  /// comme pour une session de checkout. Appelez ceci pour construire le
+  /// formulaire AVANT [createCheckoutFromPaymentLink].
+  Future<PublicPaymentLink> getPaymentLink(String slug) async {
+    final data = await _http.request('GET', '/payment-links/public/$slug/');
+    return PublicPaymentLink.fromJson(data as Map<String, dynamic>);
+  }
+
+  /// Crée une CheckoutSession one-shot à partir du lien (montant + identité
+  /// client) -- un lien étant réutilisable, chaque appel en crée une
+  /// NOUVELLE. Ni pays ni réseau ici : ça se choisit ensuite sur la session
+  /// renvoyée, pilotable avec [getSession]/[getNetworks]/[pay] via
+  /// [PublicCheckoutResult.slug].
+  ///
+  /// [amount] requis si [PublicPaymentLink.amountType] vaut "FREE" (ignoré
+  /// sinon). [customer.phone] requis si [PublicPaymentLink.requirePhone].
+  Future<PublicCheckoutResult> createCheckoutFromPaymentLink(
+    String slug, {
+    required CheckoutCustomer customer,
+    String? amount,
+    Map<String, dynamic>? customFieldValues,
+  }) async {
+    final body = <String, dynamic>{
+      'customer': customer.toJson(),
+      if (amount != null) 'amount': amount,
+      if (customFieldValues != null) 'custom_field_values': customFieldValues,
+    };
+    final data = await _http.request('POST', '/payment-links/public/$slug/checkout/', body: body);
+    return PublicCheckoutResult.fromJson(data as Map<String, dynamic>);
+  }
+
   /// Libère la connexion HTTP sous-jacente -- appelez ceci quand le client
   /// n'est plus utilisé (ex. `dispose()` d'un widget), pas obligatoire pour
   /// un usage ponctuel de courte durée.

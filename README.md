@@ -67,7 +67,7 @@ final networks = session.networks.isNotEmpty
 // 3. Le client choisit un réseau et saisit son numéro.
 final result = await checkout.pay(
   slug,
-  network: 'MTN_BJ',
+  network: 'mtn_bj',
   customer: const CheckoutCustomer(phone: '+22900000000', firstName: 'Ayaba'),
 );
 
@@ -87,7 +87,7 @@ await for (final status in checkout.pollStatus(slug)) {
 
 ```dart
 try {
-  await checkout.pay(slug, network: 'MTN_BJ', customer: customer);
+  await checkout.pay(slug, network: 'mtn_bj', customer: customer);
 } on AlphaPaySessionGoneException catch (e) {
   // 410 -- session déjà payée/expirée/annulée. e.errorCode = "paid"/"expired"/"cancelled".
 } on AlphaPayConflictException catch (e) {
@@ -112,6 +112,27 @@ numéro, et transmettez le code via le paramètre `otp:` de [pay]
 directement — ce n'est pas la même chose que [confirmOtp] (utilisé, lui,
 pour les réseaux qui confirment APRÈS le push initial).
 
+## Lien de paiement : de la page publique à la session de checkout
+
+Un lien de paiement (créé côté serveur avec le SDK Node/PHP/Python) a sa
+propre page publique, elle aussi sans clé secrète. `createCheckoutFromPaymentLink`
+crée une CheckoutSession one-shot à partir du lien : son `slug` se pilote
+ensuite exactement comme au [Démarrage rapide] ci-dessus (`getSession`, `pay`, `pollStatus`...).
+
+```dart
+final link = await checkout.getPaymentLink(linkSlug);
+print('${link.amount ?? "montant libre"} ${link.currency} -- ${link.merchantName}');
+
+final result = await checkout.createCheckoutFromPaymentLink(
+  linkSlug,
+  customer: const CheckoutCustomer(email: 'client@exemple.com', firstName: 'Ayaba'),
+  amount: link.amountType == 'FREE' ? '5000' : null, // requis seulement si montant libre
+  customFieldValues: {'reference_client': 'CMD-42'},
+);
+
+final session = await checkout.getSession(result.slug); // même flux que ci-dessus à partir d'ici
+```
+
 ## Endpoints couverts
 
 | Méthode | Endpoint | Description |
@@ -122,11 +143,12 @@ pour les réseaux qui confirment APRÈS le push initial).
 | `getStatus(slug)` | `GET /checkout/{slug}/status/` | Un instantané du statut |
 | `pollStatus(slug)` | (sonde `getStatus` en boucle) | Attend un statut terminal |
 | `confirmOtp(slug, otp:)` | `POST /checkout/{slug}/confirm-otp/` | 2e étape pour les réseaux qui l'exigent |
+| `getPaymentLink(slug)` | `GET /payment-links/public/{slug}/` | Détails publics d'un lien de paiement |
+| `createCheckoutFromPaymentLink(slug, ...)` | `POST /payment-links/public/{slug}/checkout/` | Crée une CheckoutSession à partir du lien |
 
-Pas couvert par design : tout endpoint marchand (`/transactions/`,
-`/payment-links/`, etc.) — ceux-là exigent une clé API secrète et
-appartiennent aux SDK Node/PHP/Python, jamais à un client embarqué dans une
-app.
+Pas couvert par design : tout endpoint marchand nécessitant la clé API
+secrète (créer/lister un lien de paiement, `/transactions/`, etc.) — ça
+appartient aux SDK Node/PHP/Python, jamais à un client embarqué dans une app.
 
 ## Développement
 

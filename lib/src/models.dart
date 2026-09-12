@@ -85,7 +85,7 @@ class NetworkOption {
     required this.unavailable,
   });
 
-  /// Code réseau à passer tel quel à [AlphaPayCheckout.pay] (ex. "MTN_BJ").
+  /// Code réseau à passer tel quel à [AlphaPayCheckout.pay] (ex. "mtn_bj").
   final String code;
   final String name;
 
@@ -253,6 +253,98 @@ class OtpConfirmResult {
 
   factory OtpConfirmResult.fromJson(Map<String, dynamic> json) {
     return OtpConfirmResult(transactionId: json['transaction_id'] as String, status: json['status'] as String);
+  }
+}
+
+/// Un champ personnalisé collecté sur la page publique d'un lien de paiement.
+class PaymentLinkCustomField {
+  const PaymentLinkCustomField({required this.key, required this.label, this.required = false});
+
+  final String key;
+  final String label;
+  final bool required;
+
+  factory PaymentLinkCustomField.fromJson(Map<String, dynamic> json) {
+    return PaymentLinkCustomField(
+      key: json['key'] as String,
+      label: json['label'] as String,
+      required: json['required'] as bool? ?? false,
+    );
+  }
+}
+
+/// Réponse de `GET /payment-links/public/{slug}/` -- ce que voit la page
+/// publique du lien, jamais l'id interne du marchand.
+class PublicPaymentLink {
+  const PublicPaymentLink({
+    required this.name,
+    required this.merchantName,
+    required this.amountType,
+    required this.currency,
+    required this.slug,
+    required this.isUsable,
+    required this.requirePhone,
+    required this.customFields,
+    this.description,
+    this.amount,
+    this.minAmount,
+    this.unusableReason,
+    this.facebookPixelId,
+    this.googleAdsId,
+  });
+
+  final String name;
+  final String merchantName;
+  final String? description;
+
+  /// "FIXED" ou "FREE" -- si "FREE", `amount` doit être fourni à [AlphaPayCheckout.createCheckoutFromPaymentLink].
+  final String amountType;
+  final String? amount;
+  final String? minAmount;
+  final String currency;
+  final String slug;
+  final bool isUsable;
+  final String? unusableReason;
+
+  /// true : `customer.phone` devient obligatoire côté [AlphaPayCheckout.createCheckoutFromPaymentLink].
+  final bool requirePhone;
+  final String? facebookPixelId;
+  final String? googleAdsId;
+  final List<PaymentLinkCustomField> customFields;
+
+  factory PublicPaymentLink.fromJson(Map<String, dynamic> json) {
+    return PublicPaymentLink(
+      name: json['name'] as String,
+      merchantName: json['merchant_name'] as String,
+      description: json['description'] as String?,
+      amountType: json['amount_type'] as String,
+      amount: json['amount'] as String?,
+      minAmount: json['min_amount'] as String?,
+      currency: json['currency'] as String,
+      slug: json['slug'] as String,
+      isUsable: json['is_usable'] as bool,
+      unusableReason: (json['unusable_reason'] as String?)?.let((v) => v.isEmpty ? null : v),
+      requirePhone: json['require_phone'] as bool? ?? false,
+      facebookPixelId: (json['facebook_pixel_id'] as String?)?.let((v) => v.isEmpty ? null : v),
+      googleAdsId: (json['google_ads_id'] as String?)?.let((v) => v.isEmpty ? null : v),
+      customFields: (json['custom_fields'] as List<dynamic>? ?? [])
+          .map((e) => PaymentLinkCustomField.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+/// Réponse de `POST /payment-links/public/{slug}/checkout/` -- `slug` est
+/// celui de la nouvelle CheckoutSession one-shot créée : passez-le tel quel
+/// à [AlphaPayCheckout.getSession]/[AlphaPayCheckout.pay] pour la suite.
+class PublicCheckoutResult {
+  const PublicCheckoutResult({required this.slug, required this.checkoutUrl});
+
+  final String slug;
+  final String checkoutUrl;
+
+  factory PublicCheckoutResult.fromJson(Map<String, dynamic> json) {
+    return PublicCheckoutResult(slug: json['slug'] as String, checkoutUrl: json['checkout_url'] as String);
   }
 }
 
