@@ -2,8 +2,7 @@
 
 Client Dart officiel pour les sessions de checkout hébergé AlphaPay.
 
-> **Statut : v0.1.0, non publié.** Voir [CHECKLIST.md](./CHECKLIST.md) pour
-> ce qui manque avant une publication pub.dev.
+> **Statut : v0.1.0, non publié.**
 
 **Pure Dart, pas de dépendance Flutter** — fonctionne dans une app Flutter
 (iOS/Android/web/desktop) comme dans un script Dart/serveur classique. Une
